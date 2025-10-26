@@ -29,7 +29,7 @@ home: https://www.librechat.ai
 
 dependencies:
   - name: mongodb
-    version: "17.0.0"
+    version: "16.5.45"
     condition: mongodb.enabled
     repository: file://charts/mongodb
   - name: meilisearch
