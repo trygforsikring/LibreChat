@@ -39,6 +39,45 @@ const trusted_proxy = Number(TRUST_PROXY) || 1; /* trust first proxy by default 
 
 const app = express();
 
+// Extensive logging for client disconnects and aborted requests
+app.use((req, res, next) => {
+  const startTime = process.hrtime.bigint();
+  const user = req.user?.id || req.headers['x-user-id'] || 'unknown';
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+  const userAgent = req.headers['user-agent'] || 'unknown';
+  const referer = req.headers['referer'] || req.headers['referrer'] || 'unknown';
+  const reqInfo = {
+    method: req.method,
+    url: req.originalUrl,
+    user,
+    ip,
+    userAgent,
+    referer,
+    headers: req.headers,
+    bodyLength: req.headers['content-length'] || 0,
+  };
+
+  req.on('aborted', () => {
+    const durationMs = Number(process.hrtime.bigint() - startTime) / 1e6;
+    logger.warn(
+      '[ABORTED] Request aborted by client',
+      { ...reqInfo, durationMs }
+    );
+  });
+
+  res.on('close', () => {
+    if (!res.writableEnded) {
+      const durationMs = Number(process.hrtime.bigint() - startTime) / 1e6;
+      logger.warn(
+        '[DISCONNECT] Response closed before completion (possible disconnect)',
+        { ...reqInfo, durationMs }
+      );
+    }
+  });
+
+  next();
+});
+
 const startServer = async () => {
   if (typeof Bun !== 'undefined') {
     axios.defaults.headers.common['Accept-Encoding'] = 'gzip';

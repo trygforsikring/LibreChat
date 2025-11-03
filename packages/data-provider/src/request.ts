@@ -88,6 +88,43 @@ if (typeof window !== 'undefined') {
     (response) => response,
     async (error) => {
       const originalRequest = error.config;
+      // --- BEGIN EXTENSIVE LOGGING ---
+      try {
+        const now = new Date();
+        const userAgent = navigator.userAgent;
+        const url = originalRequest?.url || 'unknown';
+        const method = originalRequest?.method || 'unknown';
+        const headers = originalRequest?.headers || {};
+        const dataLen = originalRequest?.data?.length || 0;
+        const userId = (window as any).USER_ID || headers['x-user-id'] || 'unknown';
+        const errorType = error.code || error.name || 'unknown';
+        const isCancel = !!error.__CANCEL__ || errorType === 'CanceledError';
+        const isTimeout = error.code === 'ECONNABORTED' || error.message?.includes('timeout');
+        const isNetwork = error.message?.includes('Network Error');
+        const logContext = {
+          time: now.toISOString(),
+          method,
+          url,
+          userId,
+          userAgent,
+          headers,
+          dataLen,
+          errorType,
+          isCancel,
+          isTimeout,
+          isNetwork,
+          errorMessage: error.message,
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+        };
+        // eslint-disable-next-line no-console
+        console.warn('[FRONTEND API ERROR]', logContext);
+      } catch (logErr) {
+        // eslint-disable-next-line no-console
+        console.warn('[FRONTEND API ERROR] Logging failed', logErr);
+      }
+      // --- END EXTENSIVE LOGGING ---
+
       if (!error.response) {
         return Promise.reject(error);
       }
