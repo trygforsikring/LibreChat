@@ -306,6 +306,13 @@ export class MCPOAuthHandler {
         };
 
         logger.debug(`[MCPOAuth] Starting authorization with pre-configured settings`);
+        logger.debug('[MCPOAuth] Calling startAuthorization with params:', {
+          serverUrl,
+          metadata,
+          clientInformation: clientInfo,
+          redirectUrl: clientInfo.redirect_uris?.[0] || this.getDefaultRedirectUri(serverName),
+          scope: config.scope,
+        });
         const { authorizationUrl, codeVerifier } = await startAuthorization(serverUrl, {
           metadata: metadata as unknown as SDKOAuthMetadata,
           clientInformation: clientInfo,
@@ -330,6 +337,12 @@ export class MCPOAuthHandler {
         logger.debug(
           `[MCPOAuth] Authorization URL generated: ${sanitizeUrlForLogging(authorizationUrl.toString())}`,
         );
+
+        logger.debug(
+          `[MCPOAuth] Returning from initiateOAuthFlow with flowMetadata for ${serverName}`,
+          flowMetadata,
+        );
+
         return {
           authorizationUrl: authorizationUrl.toString(),
           flowId,
@@ -373,7 +386,13 @@ export class MCPOAuthHandler {
 
       let authorizationUrl: URL;
       let codeVerifier: string;
-
+      logger.debug('[MCPOAuth] Calling startAuthorization with params:', {
+        serverUrl,
+        metadata,
+        clientInformation: clientInfo,
+        redirectUrl: clientInfo.redirect_uris?.[0] || this.getDefaultRedirectUri(serverName),
+        scope: scope,
+      });
       try {
         logger.debug(`[MCPOAuth] Calling startAuthorization...`);
         const authResult = await startAuthorization(serverUrl, {
@@ -431,7 +450,10 @@ export class MCPOAuthHandler {
         flowId,
         flowMetadata,
       };
-
+      logger.debug(
+        `[MCPOAuth] Returning from initiateOAuthFlow with flowMetadata for ${serverName}`,
+        flowMetadata,
+      );
       logger.debug(
         `[MCPOAuth] Returning from initiateOAuthFlow with result ${flowId} for ${serverName}`,
         result,
